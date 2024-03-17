@@ -6,6 +6,7 @@ DROP PROCEDURE IF EXISTS change_pw;
 DROP PROCEDURE IF EXISTS add_client;
 DROP PROCEDURE IF EXISTS add_admin;
 
+-- Function to generate a random salt
 DELIMITER !
 CREATE FUNCTION make_salt(num_chars INT)
 RETURNS VARCHAR(20) DETERMINISTIC
@@ -69,7 +70,6 @@ BEGIN
     END IF;
 END !
 DELIMITER ;
-
 
 -- Procedure to change a user's password
 DELIMITER $$

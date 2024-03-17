@@ -10,13 +10,26 @@ DROP FUNCTION IF EXISTS GetWinnerUserID;
 DROP FUNCTION IF EXISTS GetNewestGameID;
 DROP PROCEDURE IF EXISTS ChangeGameStatus;
 DROP TRIGGER IF EXISTS AfterGameUpdate;
--- Creates a new game with a specified status.
+
+/**
+ * Creates a new game with a specified status.
+ * 
+ * @procedure CreateGame
+ * @param None
+ * @return None
+ */
 CREATE PROCEDURE CreateGame()
 BEGIN
     INSERT INTO Games (DatePlayed, Status) VALUES (NOW(), 'Not Started');
 END;
 
--- Adds a question category to a specific game.
+/**
+ * Adds a question category to a specific game.
+ * 
+ * @param gameID_ The ID of the game.
+ * @param category_ The category of the question.
+ * @param airDate_ The air date of the game.
+ */
 CREATE PROCEDURE AddCategoryToGame(IN gameID_ INT, IN category_ VARCHAR(255), IN airDate_ DATE)
 BEGIN
     INSERT INTO GameQuestions (GameID, QuestionID)
@@ -25,13 +38,23 @@ BEGIN
     WHERE Category = category_ AND AirDate = airDate_;
 END;
 
--- Adds a player to a specified game.
+/**
+ * Adds a player to a specified game.
+ * 
+ * @param gameID_ The ID of the game.
+ * @param userID_ The ID of the user to be added as a player.
+ */
 CREATE PROCEDURE AddPlayerToGame(IN gameID_ INT, IN userID_ INT)
 BEGIN
     INSERT INTO GamePlayers (GameID, UserID) VALUES (gameID_, userID_);
 END;
 
--- Assigns an admin to a game.
+/**
+ * Assigns an admin to a game.
+ * 
+ * @param gameID_ The ID of the game.
+ * @param adminUserID The ID of the admin user.
+ */
 CREATE PROCEDURE SetGameAdmin(IN gameID_ INT, IN adminUserID INT)
 BEGIN
     UPDATE Games
@@ -39,13 +62,25 @@ BEGIN
     WHERE GameID = gameID_;
 END;
 
--- Starts the game by setting its status to 'Jeopardy!'.
+/**
+ * This procedure is used to start a game by updating the status of the game to 'Jeopardy!'.
+ *
+ * @param gameID_ The ID of the game to be started.
+ */
 CREATE PROCEDURE StartGame(IN gameID_ INT)
 BEGIN
     UPDATE Games SET Status = 'Jeopardy!' WHERE GameID = gameID_;
 END;
 
--- Records a player's answer to a question.
+/**
+ * Creates a stored procedure to add an answer to the Answer table.
+ *
+ * @param gamePlayerID_ The ID of the game player.
+ * @param gameQuestionID_ The ID of the game question.
+ * @param userAnswer_ The user's answer.
+ * @param isCorrect_ Indicates whether the answer is correct (1) or incorrect (0).
+ * @param points__ The number of points earned for the answer.
+ */
 CREATE PROCEDURE AddAnswer(IN gamePlayerID_ INT, IN gameQuestionID_ INT, IN userAnswer_ TEXT, IN isCorrect_ TINYINT, IN points__ INT)
 BEGIN
     INSERT INTO Answer (GamePlayerID, GameQuestionID, UserAnswer, IsCorrect, Points_) VALUES (gamePlayerID_, gameQuestionID_, userAnswer_, isCorrect_, points__);
@@ -60,6 +95,12 @@ BEGIN
     WHERE a.GameQuestionID = NEW.GameQuestionID;
 END;
 
+/**
+ * This function calculates the score of a game player based on their answers.
+ * 
+ * @param GamePlayerIDParam The ID of the game player.
+ * @return The final score of the game player.
+ */
 CREATE FUNCTION GetPlayerScore(GamePlayerIDParam INT)
 RETURNS INT
 DETERMINISTIC
@@ -74,6 +115,12 @@ BEGIN
     RETURN finalScore;
 END;
 
+/**
+ * This function retrieves the user ID of the winner for a given game ID.
+ *
+ * @param gameID_ The ID of the game.
+ * @return The user ID of the winner.
+ */
 CREATE FUNCTION GetWinnerUserID(gameID_ INT) RETURNS INT DETERMINISTIC
 BEGIN
     DECLARE winnerID INT;
@@ -89,11 +136,30 @@ BEGIN
     RETURN winnerID;
 END;
 
+/**
+ * This stored procedure is used to change the status of a game in the database.
+ *
+ * @param gameID_ The ID of the game to update.
+ * @param newStatus The new status to set for the game.
+ */
 CREATE PROCEDURE ChangeGameStatus(IN gameID_ INT, IN newStatus VARCHAR(255))
 BEGIN
     UPDATE Games SET Status = newStatus WHERE GameID = gameID_;
 END;
 
+/**
+ * This trigger is executed before an update is made on the "Games" table.
+ * It performs the following actions:
+ * 1. Checks if the new status of the game is "Complete" and the old status is not "Complete".
+ * 2. Creates a temporary table called "TempGameScores" to store scores for all players in the game.
+ * 3. Inserts scores into the temporary table by calculating the total score for each player.
+ * 4. Finds the player with the highest score from the temporary table.
+ * 5. Updates the score for the player with the highest score in the "Client" table.
+ * 6. Drops the temporary table.
+ * 
+ * @param NEW The new row being updated in the "Games" table.
+ * @param OLD The old row being updated in the "Games" table.
+ */
 DELIMITER $$
 
 CREATE TRIGGER AfterGameUpdate BEFORE UPDATE ON Games

@@ -1,3 +1,4 @@
+-- Loads the question data into the Questions table
 LOAD DATA LOCAL INFILE 'JEOPARDY.csv' INTO TABLE Questions
 FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '"' ESCAPED BY '"' LINES TERMINATED BY '\n'
 IGNORE 1 LINES
